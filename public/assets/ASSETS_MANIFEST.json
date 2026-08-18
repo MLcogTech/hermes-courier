@@ -1,0 +1,179 @@
+{
+  "manifest_version": 1,
+  "project": "hermes-courier",
+  "last_updated": "2026-08-19",
+  "policy": "100% CC0 / Public Domain / procedurally generated / SIL-OFL fonts. No external samples.",
+  "textures": [
+    {
+      "id": "stone-surface-0066",
+      "source": "AmbientCG",
+      "license": "CC0",
+      "url": "https://ambientcg.com/view?id=StoneSurface0066",
+      "role": "temple_floor_base_color",
+      "resolution": "1K",
+      "format": "PNG (source) → KTX2 (built)",
+      "status": "sourced_verified_not_committed"
+    },
+    {
+      "id": "concrete-02",
+      "source": "AmbientCG",
+      "license": "CC0",
+      "url": "https://ambientcg.com/view?id=Concrete02",
+      "role": "latent_shard_base_color",
+      "resolution": "1K",
+      "format": "PNG (source) → KTX2 (built)",
+      "status": "sourced_verified_not_committed"
+    },
+    {
+      "id": "plaster-01",
+      "source": "AmbientCG",
+      "license": "CC0",
+      "url": "https://ambientcg.com/view?id=Plaster01",
+      "role": "temple_wall_trim",
+      "resolution": "1K",
+      "format": "PNG (source) → KTX2 (built)",
+      "status": "sourced_verified_not_committed"
+    },
+    {
+      "id": "fabric-024",
+      "source": "AmbientCG",
+      "license": "CC0",
+      "url": "https://ambientcg.com/view?id=Fabric024",
+      "role": "token_river_surface",
+      "resolution": "1K",
+      "format": "PNG (source) → KTX2 (built)",
+      "status": "sourced_verified_not_committed"
+    },
+    {
+      "id": "marble-procedural",
+      "source": "procedural_WGSL",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/shaders/marble.wgsl",
+      "role": "temple_marble_pbr_base_color",
+      "resolution": "procedural",
+      "format": "WGSL shader",
+      "status": "planned"
+    },
+    {
+      "id": "glitch-procedural",
+      "source": "procedural_WGSL",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/shaders/glitch.wgsl",
+      "role": "latent_space_glitch_pattern",
+      "resolution": "procedural",
+      "format": "WGSL shader",
+      "status": "planned"
+    },
+    {
+      "id": "temple-hdri",
+      "source": "Poly Haven",
+      "license": "CC0",
+      "url": "https://polyhaven.com/a/studio_small_03",
+      "role": "run1_high_window_key",
+      "resolution": "2K (if used)",
+      "format": "EXR/HDR (source) → ? (used by PLEX)",
+      "status": "sourced_verified_not_committed_cinematography_lane"
+    }
+  ],
+  "models": [
+    {
+      "id": "temple-geometry",
+      "source": "procedural_case_atlas",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — generated in-engine",
+      "role": "Run 1 temple",
+      "status": "planned"
+    },
+    {
+      "id": "latent-shard-kit",
+      "source": "procedural_case_atlas",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — generated in-engine",
+      "role": "Run 2 static world",
+      "status": "planned"
+    },
+    {
+      "id": "hermes-agent",
+      "source": "procedural_case_atlas",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — generated in-engine",
+      "role": "player character",
+      "status": "planned"
+    }
+  ],
+  "audio": [
+    {
+      "id": "master_bus",
+      "source": "WebAudio_procedural",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/audio/MasterBus.ts",
+      "role": "gain staging / limiter",
+      "status": "scaffolded"
+    },
+    {
+      "id": "engine_hum_bed",
+      "source": "WebAudio_procedural",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/audio/EngineHum.ts",
+      "role": "Run 1 ambient bed",
+      "status": "scaffolded"
+    },
+    {
+      "id": "wind_texture",
+      "source": "WebAudio_procedural",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/audio/WindTexture.ts",
+      "role": "temple ambience",
+      "status": "planned"
+    },
+    {
+      "id": "glitch_sfx",
+      "source": "WebAudio_procedural",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/audio/GlitchSFX.ts",
+      "role": "reveal + Run 2 glitches",
+      "status": "planned"
+    },
+    {
+      "id": "token_chime",
+      "source": "WebAudio_procedural",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/audio/TokenChime.ts",
+      "role": "Run 1 token pickup feedback",
+      "status": "planned"
+    },
+    {
+      "id": "footsteps_boost",
+      "source": "WebAudio_procedural",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/audio/FootstepsBoost.ts",
+      "role": "KIPP FSM movement feedback",
+      "status": "planned"
+    },
+    {
+      "id": "typewriter_clicks",
+      "source": "WebAudio_procedural",
+      "license": "CC0 (self-authored)",
+      "url": "N/A — src/audio/TypewriterClicks.ts",
+      "role": "Outro typing",
+      "status": "planned"
+    }
+  ],
+  "fonts": [
+    {
+      "id": "special-elite",
+      "source": "Google Fonts",
+      "license": "SIL Open Font License 1.1",
+      "url": "https://fonts.google.com/specimen/Special+Elite",
+      "role": "outro typewriter + credits",
+      "status": "sourced_verified_not_committed"
+    }
+  ],
+  "notes": {
+    "no_external_audio_samples": true,
+    "no_external_3d_models": true,
+    "all_shaders_self_authored": true,
+    "ambientcg_cc0_verified": "2026-08-19",
+    "polyhaven_cc0_verified": "2026-08-19"
+  }
+}
