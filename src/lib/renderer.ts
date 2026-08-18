@@ -1,6 +1,6 @@
 // renderer.ts — WebGPU-capable renderer with WebGL2 fallback.
-// P0 upgrade: owns its scene graph, exposes getInternalRenderer() for perf
-// telemetry, provides the canonical test scene (marble box + fog) via TempleWorld.
+// P1 upgrade: accepts an external camera from CameraManager, exposes scene for
+// lighting setup, provides resize callback.
 
 import * as THREE from 'three';
 
@@ -11,42 +11,34 @@ type AnyRenderer = any;
 
 export class Renderer {
   private canvas: HTMLCanvasElement;
-  private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
-  private renderer: AnyRenderer;
+  private camera: THREE.PerspectiveCamera | null = null;
+  private threeRenderer: AnyRenderer;
   private api: GfxAPI = 'webgl2';
   private initialized = false;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(
-      55,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000,
-    );
-    this.camera.position.set(0, 1.2, 5);
-    this.camera.lookAt(0, 0.5, 0);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    this.threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   }
 
   async init(): Promise<void> {
     this.api = await this.detectAPI();
     if (this.api === 'webgpu' && (THREE as any).WebGPURenderer) {
-      this.renderer.dispose?.();
-      this.renderer = new (THREE as any).WebGPURenderer({
+      this.threeRenderer.dispose?.();
+      this.threeRenderer = new (THREE as any).WebGPURenderer({
         canvas: this.canvas,
         antialias: true,
       });
-      if (this.renderer && typeof this.renderer.initPromise !== 'undefined') {
-        await this.renderer.initPromise;
+      if (this.threeRenderer && typeof this.threeRenderer.initPromise !== 'undefined') {
+        await this.threeRenderer.initPromise;
       }
     }
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setClearColor(0x0a0c14, 1.0);
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.threeRenderer.setSize(window.innerWidth, window.innerHeight);
+    this.threeRenderer.setPixelRatio(window.devicePixelRatio);
+    this.threeRenderer.setClearColor(0x0a0c14, 1.0);
+    this.threeRenderer.outputColorSpace = THREE.SRGBColorSpace;
     this.initialized = true;
   }
 
@@ -59,17 +51,21 @@ export class Renderer {
     return Promise.resolve('webgl2');
   }
 
+  /**
+   * Set the camera to render with. Called by CameraManager each frame or on
+   * camera swap (e.g. chase → outro).
+   */
+  setCamera(camera: THREE.PerspectiveCamera): void {
+    this.camera = camera;
+  }
+
   render(): void {
-    if (!this.initialized) return;
-    this.renderer.render(this.scene, this.camera);
+    if (!this.initialized || !this.camera) return;
+    this.threeRenderer.render(this.scene, this.camera);
   }
 
   getAPI(): GfxAPI {
     return this.api;
-  }
-
-  getCamera(): THREE.PerspectiveCamera {
-    return this.camera;
   }
 
   getScene(): THREE.Scene {
@@ -77,12 +73,14 @@ export class Renderer {
   }
 
   getInternalRenderer(): any {
-    return this.renderer;
+    return this.threeRenderer;
   }
 
   resize(): void {
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
+    this.threeRenderer.setSize(window.innerWidth, window.innerHeight);
+    if (this.camera) {
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+    }
   }
 }

@@ -1,5 +1,7 @@
 // main.ts — Hermes Protocol entry point.
 // P0: fixed-timestep loop, WebGPU/WGLSL init, temple test scene, perf telemetry.
+// P1: CameraManager (PLEX), TempleLighting (PLEX), GameStateManager (KIPP).
+//
 // Merge: case/p0 engine wiring + kipp/p0 zero-arg InputManager signature.
 
 import { Renderer } from '@/lib/renderer';
@@ -12,6 +14,8 @@ import { LatentSpaceWorld } from '@/worlds/latent-space/world';
 import { Transition } from '@/worlds/transition';
 import { PerformanceMonitor } from '@/lib/performance';
 import { FixedTimestepLoop, FIXED_STEP_SEC } from '@/core/FixedTimestepLoop';
+import { CameraManager } from '@/camera/CameraManager';
+import * as THREE from 'three';
 
 function writePerfOnQuit(perf: PerformanceMonitor): void {
   // Best-effort perf dump on page unload — evidence for TARS.
@@ -49,6 +53,10 @@ async function main(): Promise<void> {
   const latent = new LatentSpaceWorld(renderer, input);
   const transition = new Transition(renderer, input);
 
+  // PLEX: CameraManager owns the chase camera (Act 1 + Act 2) and the outro camera.
+  const cameraManager = new CameraManager(gameState);
+  renderer.setCamera(cameraManager.activeCamera);
+
   const perf = new PerformanceMonitor();
   perf.setRendererInfo(renderer.getInternalRenderer());
   perf.start();
@@ -59,6 +67,9 @@ async function main(): Promise<void> {
     onUpdate: (dt) => {
       contextWindow.update(dt);
       gameState.update(dt, contextWindow.elapsed);
+
+      // PLEX: update camera each fixed tick.
+      cameraManager.update(dt);
 
       switch (gameState.current) {
         case GameState.ACT_1:
@@ -76,12 +87,21 @@ async function main(): Promise<void> {
       }
     },
     onRender: () => {
+      // PLEX: set the active camera (chase or outro) for this frame.
+      renderer.setCamera(cameraManager.activeCamera);
       renderer.render();
       perf.endFrame();
     },
   });
 
-  // HUD — P0 evidence hook for smoke tests
+  // Resize handler — PLEX: camera aspect must track window size.
+  const onResize = () => {
+    renderer.resize();
+    cameraManager.resize();
+  };
+  window.addEventListener('resize', onResize);
+
+  // HUD — P0 evidence hook for smoke tests + P1 camera telemetry.
   const hud = document.getElementById('hud');
   if (hud) {
     const updateHUD = () => {
@@ -89,6 +109,7 @@ async function main(): Promise<void> {
       const webgpu = api === 'webgpu' ? 'YES' : 'NO';
       const fps = perf.getFPS();
       const ft = perf.getFrameTime();
+      const cam = cameraManager.getDescriptor();
       hud.textContent = [
         `Renderer: ${api.toUpperCase()}`,
         `WebGPU: ${webgpu}`,
@@ -96,6 +117,7 @@ async function main(): Promise<void> {
         `FPS: ${fps.toFixed(1)}`,
         `Frame: ${ft.toFixed(2)}ms`,
         `Budget: ${perf.withinBudget() ? 'OK' : 'OVER'}`,
+        `Camera: ${cam}`,
       ].join(' | ');
     };
     updateHUD();

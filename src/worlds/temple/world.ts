@@ -1,8 +1,16 @@
-// TempleWorld — P0 test scene: marble box + fog + token particles.
+// TempleWorld — P1 test scene: marble box + fog + token particles + proper temple lighting.
 // Renders the canonical hello-world scene for the temple act.
 // Uses THREE.InstancedMesh for the token stream (zero individual draw calls).
+//
+// P1 upgrade (PLEX):
+//  - TempleLighting replaces the raw DirectionalLight + AmbientLight setup.
+//  - Lighting is 5500K warm directional key + warm marble bounce fill + god-ray shaft.
+//  - No cool/blue light in Act 1 (hard rule from lighting-design.md §2.5).
 
 import * as THREE from 'three';
+import { Renderer } from '@/lib/renderer';
+import { InputManager } from '@/lib/input';
+import { TempleLighting } from '@/lighting/TempleLighting';
 
 const PARTICLE_COUNT = 256;
 const PARTICLE_OPTS = {
@@ -12,16 +20,17 @@ const PARTICLE_OPTS = {
 };
 
 export class TempleWorld {
-  private renderer: any;
-  private input: any;
+  private renderer: Renderer;
+  private input: InputManager;
   private marbleBox: THREE.Mesh | null = null;
   private particleMesh: THREE.InstancedMesh | null = null;
   private particleData: Float32Array = new Float32Array(0);
   private matrix: THREE.Matrix4 = new THREE.Matrix4();
   private quaternion: THREE.Quaternion = new THREE.Quaternion();
   private _time: number = 0;
+  private lighting: TempleLighting | null = null;
 
-  constructor(renderer: any, input: any) {
+  constructor(renderer: Renderer, input: InputManager) {
     this.renderer = renderer;
     this.input = input;
   }
@@ -29,7 +38,12 @@ export class TempleWorld {
   init(scene: THREE.Scene): void {
     if (!scene) return;
 
-    // --- Marble box (temple centerpiece) ---
+    // ── Temple lighting (PLEX P1) ──────────────────────────────────────────────
+    // Replaces the raw DirectionalLight + AmbientLight from P0.
+    // 5500K high-window key, warm marble bounce fill, god-ray shaft mesh.
+    this.lighting = new TempleLighting(scene);
+
+    // ── Marble box (temple centerpiece) ─────────────────────────────────────────
     const geo = new THREE.BoxGeometry(2.0, 2.0, 2.0);
     const mat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -41,7 +55,7 @@ export class TempleWorld {
     this.marbleBox.position.set(0, 0, 0);
     scene.add(this.marbleBox);
 
-    // --- Token-stream particles (instanced) ---
+    // ── Token-stream particles (instanced) ─────────────────────────────────────
     const particleGeo = new THREE.PlaneGeometry(1, 1);
     const particleMat = new THREE.MeshBasicMaterial({
       color: 0x88ccff,
@@ -62,19 +76,6 @@ export class TempleWorld {
     }
     this.particleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     scene.add(this.particleMesh);
-
-    // --- Fog ---
-    scene.fog = new THREE.FogExp2(0x141a2a, 0.035);
-
-    // --- Lighting ---
-    const ambient = new THREE.AmbientLight(0x404060, 0.4);
-    scene.add(ambient);
-    const dir = new THREE.DirectionalLight(0xffeedd, 1.2);
-    dir.position.set(5, 8, 4);
-    scene.add(dir);
-    const fill = new THREE.DirectionalLight(0x4488ff, 0.3);
-    fill.position.set(-4, 2, -6);
-    scene.add(fill);
   }
 
   update(dt: number): void {
@@ -118,6 +119,43 @@ export class TempleWorld {
         mesh.setMatrixAt(i, this.matrix);
       }
       mesh.instanceMatrix.needsUpdate = true;
+    }
+  }
+
+  /** Called during the reveal transition — cuts the temple lighting. */
+  cutLighting(): void {
+    if (this.lighting) {
+      this.lighting.cut();
+    }
+  }
+
+  /** Called on run reset — restores the temple lighting. */
+  restoreLighting(): void {
+    if (this.lighting) {
+      this.lighting.restore();
+    }
+  }
+
+  /** Returns the temple lighting for external control (e.g. fade god rays during dissolve). */
+  get templeLighting(): TempleLighting | null {
+    return this.lighting;
+  }
+
+  /** Dispose of all created resources. */
+  dispose(): void {
+    if (this.lighting) {
+      this.lighting.dispose();
+      this.lighting = null;
+    }
+    if (this.marbleBox) {
+      this.marbleBox.geometry.dispose();
+      (this.marbleBox.material as THREE.Material).dispose();
+      this.marbleBox = null;
+    }
+    if (this.particleMesh) {
+      this.particleMesh.geometry.dispose();
+      (this.particleMesh.material as THREE.Material).dispose();
+      this.particleMesh = null;
     }
   }
 }
