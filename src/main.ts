@@ -1,3 +1,6 @@
+// main.ts — Hermes Protocol entry point.
+// P0: fixed-timestep loop, WebGPU/WGLSL init, temple test scene, perf telemetry.
+
 import { Renderer } from '@/lib/renderer';
 import { InputManager } from '@/lib/input';
 import { GameStateManager, GameState } from '@/managers/game-state';
@@ -7,9 +10,24 @@ import { TempleWorld } from '@/worlds/temple/world';
 import { LatentSpaceWorld } from '@/worlds/latent-space/world';
 import { Transition } from '@/worlds/transition';
 import { PerformanceMonitor } from '@/lib/performance';
-import { Scene } from '@/lib/scene';
+import { FixedTimestepLoop, FIXED_STEP_SEC } from '@/core/FixedTimestepLoop';
 
-// Hermes Protocol — built by bots, gated by evidence.
+function writePerfOnQuit(perf: PerformanceMonitor): void {
+  // Best-effort perf dump on page unload — evidence for TARS.
+  try {
+    perf.flush();
+  } catch {
+    // ignore
+  }
+  window.addEventListener('beforeunload', () => {
+    try {
+      perf.flush();
+    } catch {
+      // ignore
+    }
+  });
+}
+
 async function main(): Promise<void> {
   const canvas = document.getElementById('gl-canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('#gl-canvas not found');
@@ -18,62 +36,75 @@ async function main(): Promise<void> {
   await renderer.init();
 
   const input = new InputManager(canvas);
-  const scene = new Scene();
 
   const gameState = new GameStateManager();
   const contextWindow = new ContextWindowManager();
   const tokenCounter = new TokenCounter();
 
   const temple = new TempleWorld(renderer, input);
+  temple.init(renderer.getScene());
+
   const latent = new LatentSpaceWorld(renderer, input);
   const transition = new Transition(renderer, input);
 
   const perf = new PerformanceMonitor();
+  perf.setRendererInfo(renderer.getInternalRenderer());
   perf.start();
+  writePerfOnQuit(perf);
 
-  let lastTime = performance.now();
+  // Fixed-timestep loop: 60 Hz update, interpolated render.
+  const loop = new FixedTimestepLoop({
+    onUpdate: (dt) => {
+      contextWindow.update(dt);
+      gameState.update(dt, contextWindow.elapsed);
 
-  const loop = (time: number): void => {
-    const dt = Math.min((time - lastTime) / 1000, 0.05); // clamp to 50ms
-    lastTime = time;
+      switch (gameState.current) {
+        case GameState.ACT_1:
+          temple.update(dt);
+          break;
+        case GameState.TRANSITION:
+          transition.update(dt);
+          break;
+        case GameState.ACT_2:
+          latent.update(dt);
+          break;
+        case GameState.EPILOGUE:
+          tokenCounter.renderFinal();
+          break;
+      }
+    },
+    onRender: () => {
+      renderer.render();
+      perf.endFrame();
+    },
+  });
 
-    perf.beginFrame();
+  // HUD — P0 evidence hook for smoke tests
+  const hud = document.getElementById('hud');
+  if (hud) {
+    const updateHUD = () => {
+      const api = renderer.getAPI();
+      const webgpu = api === 'webgpu' ? 'YES' : 'NO';
+      const fps = perf.getFPS();
+      const ft = perf.getFrameTime();
+      hud.textContent = [
+        `Renderer: ${api.toUpperCase()}`,
+        `WebGPU: ${webgpu}`,
+        `Fixed Step: ${FIXED_STEP_SEC.toFixed(5)}s`,
+        `FPS: ${fps.toFixed(1)}`,
+        `Frame: ${ft.toFixed(2)}ms`,
+        `Budget: ${perf.withinBudget() ? 'OK' : 'OVER'}`,
+      ].join(' | ');
+    };
+    updateHUD();
+    setInterval(updateHUD, 200);
+  }
 
-    // CASE: enforce 16.6ms budget
-    if (!perf.withinBudget()) {
-      console.warn('[TARS] Budget overrun — frame skipped for stability');
-      requestAnimationFrame(loop);
-      return;
-    }
-
-    contextWindow.update(dt);
-    gameState.update(dt, contextWindow.elapsed);
-
-    switch (gameState.current) {
-      case GameState.ACT_1:
-        temple.update(dt);
-        break;
-      case GameState.TRANSITION:
-        transition.update(dt);
-        break;
-      case GameState.ACT_2:
-        latent.update(dt);
-        break;
-      case GameState.EPILOGUE:
-        tokenCounter.renderFinal();
-        break;
-    }
-
-    renderer.render(scene, dt);
-    perf.endFrame();
-
-    requestAnimationFrame(loop);
-  };
-
-  requestAnimationFrame(loop);
+  loop.start();
 }
 
 main().catch((err) => {
   console.error('[TARS] Boot failure:', err);
-  document.getElementById('boot-error')!.textContent = err.message;
+  const el = document.getElementById('boot-error');
+  if (el) el.textContent = err.message;
 });

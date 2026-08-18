@@ -71,8 +71,17 @@ export class WebGPURenderer {
         const adapter = await nav.gpu.requestAdapter();
         caps.webgpu = adapter !== null;
         if (adapter) {
-          const info = adapter.limits;
-          caps.adapterInfo.device = `WebGPU adapter (maxStorageBuffersPerShaderStage: ${info.maxStorageBuffersPerShaderStage})`;
+          // Adapter itself has no systemInformation; derive from a device once created,
+          // or fall back to a best-effort label. Keep it deterministic for the gate.
+          caps.adapterInfo.device = 'WebGPU adapter present';
+          // Prefer adapter's own info if the browser exposes it (optional field).
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const ai = (adapter as any).info;
+          if (ai && typeof ai === 'object') {
+            caps.adapterInfo.vendor = typeof ai.vendor === 'string' ? ai.vendor : caps.adapterInfo.vendor;
+            caps.adapterInfo.architecture = typeof ai.architecture === 'string' ? ai.architecture : caps.adapterInfo.architecture;
+            caps.adapterInfo.device = typeof ai.device === 'string' ? ai.device : caps.adapterInfo.device;
+          }
         }
       } catch {
         caps.webgpu = false;
