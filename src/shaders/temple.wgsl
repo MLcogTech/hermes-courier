@@ -1,5 +1,4 @@
-// temple.wgsl — Master Temple Material
-// P0 shader skeleton for the hermes-courier temple act.
+// temple.wgsl — Master Temple Material (authoritative WGSL spec, referenced by P1 GLSL impl).
 // Solid marble PBR → wireframe-latent along u_dissolve (0.0 = solid, 1.0 = dissolved).
 //
 // Vertex entry: vertexMain
