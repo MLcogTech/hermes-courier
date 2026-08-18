@@ -1,0 +1,75 @@
+# hermes-courier-gpu-qa Dockerfile
+# P0 CONTRACT: QA image boots, returns webgpu-capabilities.json + captured black frame.
+# Based on resident-eval-gpu-qa pattern — Chromium + Mesa + UHD 770 compat.
+# No docker.sock. No secrets.
+
+FROM ubuntu:22.04
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install base dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    gnupg \
+    wget \
+    unzip \
+    git \
+    nodejs \
+    npm \
+    xvfb \
+    libgl1-mesa-dri \
+    libgl1-mesa-glx \
+    mesa-utils \
+    libegl1-mesa \
+    libgles2-mesa \
+    libxv1 \
+    libxrender1 \
+    libxcb-shm0 \
+    libxcb-dri3-0 \
+    libxcb-present0 \
+    libdrm2 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Chromium with WebGPU support
+RUN (curl -sSf https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg \
+     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+     && apt-get update \
+     && apt-get install -y google-chrome-stable \
+     && rm -rf /var/lib/apt/lists/*) || \
+    (wget -q -O - --no-check-certificate https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+     && apt-get update \
+     && apt-get install -y google-chrome-stable \
+     && rm -rf /var/lib/apt/lists/*)
+
+# Create non-root user
+RUN useradd -m -s /bin/bash qauser
+
+# Set up workspace
+WORKDIR /app
+COPY --chown=qauser:qauser package.json package-lock.json* ./
+COPY --chown=qauser:qauser tsconfig.json ./
+COPY --chown=qauser:qauser src/ ./src/
+COPY --chown=qauser:qauser index.html ./
+COPY --chown=qauser:qauser vite.config.ts ./
+
+USER qauser
+ENV HOME=/home/qauser
+
+# Install deps
+RUN npm ci --prefer-offline --no-audit --no-fund 2>/dev/null || npm install --no-audit --no-fund
+
+# QA scripts
+COPY --chown=qauser:qauser qa/ /app/qa/
+
+# Enable WebGPU in Chrome
+ENV CHROME_FLAGS="--enable-unsafe-webgpu --enable-webgpu --enable-features=Vulkan,WebGPU,WebGL2ComputeContext --disable-features=VizDisplayCompositor --use-gl=swiftshader --enable-unsafe-swiftshader"
+
+# Entry point: runs QA capture
+ENTRYPOINT ["node", "/app/qa/run-qaa.js"]
+
+# Default command
+CMD ["--output-dir=/app/qa-output"]
