@@ -59,6 +59,11 @@ export class Renderer {
     this.camera = camera;
   }
 
+  /** Returns the camera currently set on the renderer (or null before first set). */
+  getCamera(): THREE.PerspectiveCamera | null {
+    return this.camera;
+  }
+
   render(): void {
     if (!this.initialized || !this.camera) return;
     this.threeRenderer.render(this.scene, this.camera);
