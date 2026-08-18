@@ -1,15 +1,16 @@
 import { defineConfig } from 'vite';
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 
 export default defineConfig({
-  root: 'src',
-  publicDir: 'public',
+  root: '.',
   base: './',
   build: {
+    target: 'ES2023',
     outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       input: {
-        app: resolve(__dirname, 'src/index.html'),
+        main: resolve(__dirname, 'src/index.html'),
       },
     },
   },
@@ -19,19 +20,16 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0',
-    port: 8080,
-    strictPort: false,
+    port: 3000,
+    host: true,
   },
   preview: {
-    host: '0.0.0.0',
-    port: 8080,
+    port: 3000,
+    host: true,
   },
   test: {
-    browser: {
-      enabled: true,
-      headless: true,
-      name: 'chrome',
-    },
+    globals: true,
+    environment: 'jsdom',
+    include: ['tests/**/*.ts', 'tests-e2e/**/*.ts'],
   },
 });
