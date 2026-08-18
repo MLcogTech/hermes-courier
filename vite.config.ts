@@ -3,14 +3,19 @@ import { resolve } from 'path';
 
 export default defineConfig({
   root: 'src',
+  publicDir: 'public',
   base: './',
-  publicDir: '../public',
   build: {
-    outDir: '../dist',
+    outDir: 'dist',
     rollupOptions: {
       input: {
         app: resolve(__dirname, 'src/index.html'),
       },
+    },
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
     },
   },
   server: {
