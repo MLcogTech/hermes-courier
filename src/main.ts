@@ -1,8 +1,7 @@
 // main.ts — Hermes Protocol entry point.
-// P0: fixed-timestep loop, WebGPU/WGLSL init, temple test scene, perf telemetry.
-// Merge: case/p0 engine wiring + kipp/p0 zero-arg InputManager signature.
+// P1: temple corridor + token river, on-demand capture, dissolve uniform drive.
 
-import { Renderer } from '@/lib/renderer';
+import { Renderer, RenderCapabilities } from '@/lib/renderer';
 import { InputManager } from '@/lib/input';
 import { GameStateManager, GameState } from '@/managers/game-state';
 import { ContextWindowManager } from '@/managers/context-window';
@@ -14,18 +13,9 @@ import { PerformanceMonitor } from '@/lib/performance';
 import { FixedTimestepLoop, FIXED_STEP_SEC } from '@/core/FixedTimestepLoop';
 
 function writePerfOnQuit(perf: PerformanceMonitor): void {
-  // Best-effort perf dump on page unload — evidence for TARS.
-  try {
-    perf.flush();
-  } catch {
-    // ignore
-  }
+  try { perf.flush(); } catch { /* ignore */ }
   window.addEventListener('beforeunload', () => {
-    try {
-      perf.flush();
-    } catch {
-      // ignore
-    }
+    try { perf.flush(); } catch { /* ignore */ }
   });
 }
 
@@ -36,15 +26,15 @@ async function main(): Promise<void> {
   const renderer = new Renderer(canvas);
   await renderer.init();
 
-  // KIPP's zero-arg InputManager — keyboard listeners are window-scoped.
   const input = new InputManager();
-
   const gameState = new GameStateManager();
   const contextWindow = new ContextWindowManager();
   const tokenCounter = new TokenCounter();
 
-  const temple = new TempleWorld(renderer, input);
-  temple.init(renderer.getScene());
+  // ── P1 corridor + token river ─────────────────────────────────────────────
+  const templeWorld = new TempleWorld(renderer.getScene());
+  // NOTE: TempleWorld builds its own TempleMaterial internally; the material ref
+  // is held for dissolve control if/when GameState exposes a dissolve signal.
 
   const latent = new LatentSpaceWorld(renderer, input);
   const transition = new Transition(renderer, input);
@@ -54,7 +44,14 @@ async function main(): Promise<void> {
   perf.start();
   writePerfOnQuit(perf);
 
-  // Fixed-timestep loop: 60 Hz update, interpolated render.
+  // ── on-demand capture (P1) ─────────────────────────────────────────────────
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'c' || e.key === 'C') {
+      renderer.capture('/renders');
+    }
+  });
+
+  // ── fixed-timestep loop ────────────────────────────────────────────────────
   const loop = new FixedTimestepLoop({
     onUpdate: (dt) => {
       contextWindow.update(dt);
@@ -62,7 +59,7 @@ async function main(): Promise<void> {
 
       switch (gameState.current) {
         case GameState.ACT_1:
-          temple.update(dt);
+          templeWorld.update(dt, renderer.getCamera());
           break;
         case GameState.TRANSITION:
           transition.update(dt);
@@ -81,7 +78,7 @@ async function main(): Promise<void> {
     },
   });
 
-  // HUD — P0 evidence hook for smoke tests
+  // ── HUD (P0/P1 evidence) ───────────────────────────────────────────────────
   const hud = document.getElementById('hud');
   if (hud) {
     const updateHUD = () => {
@@ -96,6 +93,7 @@ async function main(): Promise<void> {
         `FPS: ${fps.toFixed(1)}`,
         `Frame: ${ft.toFixed(2)}ms`,
         `Budget: ${perf.withinBudget() ? 'OK' : 'OVER'}`,
+        `Press [C] to capture to /renders`,
       ].join(' | ');
     };
     updateHUD();
