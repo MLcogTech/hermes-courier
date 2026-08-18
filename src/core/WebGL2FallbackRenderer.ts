@@ -32,7 +32,7 @@ export class WebGL2FallbackRenderer {
     this.camera.position.z = 3;
 
     const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshNormalMaterial({ wireframe: false });
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: false });
     this.cube = new THREE.Mesh(geometry, material);
     this.scene.add(this.cube);
 
