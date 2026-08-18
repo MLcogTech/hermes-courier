@@ -8,6 +8,7 @@ import { LatentSpaceWorld } from '@/worlds/latent-space/world';
 import { Transition } from '@/worlds/transition';
 import { PerformanceMonitor } from '@/lib/performance';
 import { Scene } from '@/lib/scene';
+import { FIXED_STEP_MS } from '@/core/FixedTimestepLoop';
 
 // Hermes Protocol — built by bots, gated by evidence.
 async function main(): Promise<void> {
@@ -17,7 +18,7 @@ async function main(): Promise<void> {
   const renderer = new Renderer(canvas);
   await renderer.init();
 
-  const input = new InputManager(canvas);
+  const input = new InputManager();
   const scene = new Scene();
 
   const gameState = new GameStateManager();
@@ -30,6 +31,20 @@ async function main(): Promise<void> {
 
   const perf = new PerformanceMonitor();
   perf.start();
+
+  // TARS gate HUD — populated with real renderer/loop state (smoke spec contract).
+  const hud = document.getElementById('hud');
+  const frameLine = document.createElement('div');
+  if (hud) {
+    const api = renderer.getAPI();
+    hud.textContent = [
+      `Renderer: ${api === 'webgpu' ? 'WebGPU' : 'WebGL2'}`,
+      `Fixed Step: ${FIXED_STEP_MS.toFixed(2)}ms`,
+      `WebGPU: ${api === 'webgpu' ? 'YES' : 'NO'}`,
+      '',
+    ].join('\n');
+    hud.appendChild(frameLine);
+  }
 
   let lastTime = performance.now();
 
@@ -66,6 +81,7 @@ async function main(): Promise<void> {
 
     renderer.render(scene, dt);
     perf.endFrame();
+    frameLine.textContent = `Frame: ${perf.getFrameTime().toFixed(2)}ms (budget ${perf.withinBudget() ? 'OK' : 'OVER'})`;
 
     requestAnimationFrame(loop);
   };

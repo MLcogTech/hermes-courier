@@ -6,6 +6,8 @@ dist/
 
 # QA output
 qa-output/
+test-results/
+playwright-report/
 
 # Logs
 *.log

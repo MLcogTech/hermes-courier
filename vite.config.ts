@@ -30,6 +30,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    include: ['tests/**/*.ts', 'tests-e2e/**/*.ts'],
+    include: ['tests/**/*.ts'],
   },
 });

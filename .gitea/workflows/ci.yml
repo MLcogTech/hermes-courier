@@ -43,7 +43,8 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npx vite build
-      - uses: actions/upload-artifact@v4
+      # Gitea act_runner: v4 uses the GHES-only artifact protocol — pin v3.
+      - uses: actions/upload-artifact@v3
         with:
           name: dist
           path: dist/
