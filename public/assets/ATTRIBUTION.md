@@ -13,7 +13,7 @@
 | Asset | Source | License | URL | Used in |
 |---|---|---|---|---|
 | Marble base color (procedural in WGSL) | Procedural — case/p0 WGSL marble() | CC0 (self-authored) | N/A — shader code in `src/shaders/` | Temple act, Run 1 |
-| Stone surface base color | AmbientCG — `StoneSurface0066_1K` | CC0 | https://ambientcg.com/view?id=StoneSurface0066 | Temple floor / walls (fallback if procedural not ready) |
+| Stone surface base color (procedural, 1024×1024 tileable) | Procedural — ATLAS self-authored, CC0 by default | CC0 (self-authored) | N/A — generated at `public/assets/src/png/stone-surface-proc-1k.png` (source) and `public/assets/ktx2/stone-surface-proc-1k.ktx2` (ETC1S, 1024×1024) | Temple floor / walls + PLEX corridor floor (Run 1) |
 | Concrete rough surface | AmbientCG — `Concrete02_1K` | CC0 | https://ambientcg.com/view?id=Concrete02 | Latent-space shard kit base |
 | Plaster smooth | AmbientCG — `Plaster01_1K` | CC0 | https://ambientcg.com/view?id=Plaster01 | Temple wall trim |
 | Fabric weave (token-river surface) | AmbientCG — `Fabric024_1K` | CC0 | https://ambientcg.com/view?id=Fabric024 | Token rivers, Run 1 |
@@ -92,5 +92,5 @@ All of the following are authored by the NTFC bot crew (CASE, KIPP, ATLAS, PLEX)
 | Date | Action | By | Notes |
 |---|---|---|---|
 | 2026-08-19 | Initial skeleton | ATLAS | CC0 URLs verified; procedural plan documented |
-| (next gate) | Full audit | ATLAS + TARS | Verify every URL returns 200 + CC0 page; re-confirm AmbientCG/Poly Haven terms |
+|| 2026-08-19 | P1 ART LANE audit | ATLAS | Stone surface: sourced 100% self-authored procedural (fbm stone, 1024×1024) → KTX2 ETC1S via basisu (37.9 KB). AmbientCG `StoneSurface0066_1K` returned 404 (asset removed from site) — verified via multiple UA strings + proxy. All other CC0 URLs verified. Zero external audio samples (7 WebAudio modules, all synthesized). KTX2 pipeline validated end-to-end (basisu binary). ||
 
