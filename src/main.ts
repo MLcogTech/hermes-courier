@@ -18,7 +18,7 @@ async function main(): Promise<void> {
   const renderer = new Renderer(canvas);
   await renderer.init();
 
-  const input = new InputManager(canvas);
+  const input = new InputManager();
   const scene = new Scene();
 
   const gameState = new GameStateManager();
