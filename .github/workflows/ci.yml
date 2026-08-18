@@ -63,3 +63,4 @@ jobs:
         run: |
           echo "[TARS] Budget gate: 16.6ms frame budget enforced by CASE"
           echo "[TARS] (Full budget gate runs once the render loop exists)"
+# Gitea Actions CI — Hermes Protocol
