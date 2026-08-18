@@ -77,6 +77,11 @@ export class FixedTimestepLoop {
     // Accumulate
     this.accumulator += this.frameDt;
 
+    // Clamp accumulation to prevent spiral of death
+    if (this.accumulator > this.maxAccumulation) {
+      this.accumulator = this.maxAccumulation;
+    }
+
     // Fixed-step updates
     while (this.accumulator >= this.fixedStep) {
       this.onUpdate(this.fixedStep);
