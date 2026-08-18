@@ -5,6 +5,7 @@
 // from a height-field built from the same noise. Dissolve/dissolve-edge
 // preserved from P0 skeleton; u_dissolve and u_time and u_cameraWorld
 // uniforms retained.
+// Solid marble PBR → wireframe-latent along u_dissolve (0.0 = solid, 1.0 = dissolved).
 //
 // Vertex entry: vertexMain
 // Fragment entry: fragmentMain
